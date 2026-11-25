@@ -31,8 +31,9 @@ onMounted(async () => {
 })
 
 // engine.js holds global listeners and canvas refs, so a full reload is the cleanest reset
-function signOut() {
-  logout()
+// logout() is an API call now, so wait for it before tearing the page down
+async function signOut() {
+  await logout()
   location.hash = '#/login'
   location.reload()
 }

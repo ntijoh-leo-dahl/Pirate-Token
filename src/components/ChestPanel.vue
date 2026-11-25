@@ -56,7 +56,7 @@
     </div>
 
     <div class="btns">
-      <v-btn v-for="b in OPEN" :key="b.n" variant="flat" :class="{p:b.n===1}" :data-n="b.n" @click="call('openN',b.n)">{{ b.l }}</v-btn>
+      <v-btn v-for="b in OPEN" :key="b.n" variant="flat" :class="{p:b.n===1}" :data-n="b.n" @click="openMany(b.n)">{{ b.l }}</v-btn>
     </div>
     <div class="btns">
       <v-btn id="auto" class="p" variant="flat" @click="call('toggleAuto')">{{ ui.auto ? '■ Stop' : '▶ Open until Pirate Token' }}</v-btn>
@@ -78,12 +78,34 @@
 <script setup>
 import { reactive, watch, nextTick } from 'vue'
 import { ui, S, R, MODES, WK, engine, setWeek } from '../game/store.js'
+import { openChestsBatch } from '../game/drops.js'
 
 const OPEN = [
   { n: 1, l: 'Open 1' }, { n: 10, l: '×10' }, { n: 100, l: '×100' },
   { n: 1000, l: '×1,000' }, { n: 10000, l: '×10,000' }
 ]
 const call = (fn, ...args) => engine.value?.[fn]?.(...args)
+
+/**
+ * Open `count` chests. All five buttons above call this with b.n, so write
+ * the opening once and it works for ×1 through ×10,000.
+ *
+ * Tools you can reach from here:
+ *   openChestsBatch(count)            rolls the chests, updates every counter
+ *                                     in S, returns drops oldest-first as
+ *                                     { tier, dupe, at, item }
+ *   call('stopAuto')                  stop the "Open until Pirate Token" run
+ *   paintResults(drops, count)        from overlays.js — the #result panel and
+ *                                     the beam; returns { reward, isBatch, item }
+ *   playReveal(reward, isBatch, item) from reveal.js — charge-up, lid, sparks
+ *
+ * openChestsBatch is imported below because it touches no DOM. The two paint
+ * helpers only use the DOM inside their functions, so importing them here is
+ * safe too — engine.js is the only module that touches the DOM on load.
+ */
+function openMany(count) {
+  console.log(count)
+}
 
 // Slot "ping" animation when a reward count goes up
 const ping = reactive({})
