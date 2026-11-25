@@ -1,48 +1,36 @@
 /*
- * Client-side demo auth. Accounts live in this browser's localStorage only
- * (salted SHA-256). There is no server, so this is NOT real security.
- * Swap signup()/login()/logout() for calls to your API when you have one.
+ * The app's auth state, kept in one reactive object.
+ *
+ * This file no longer touches localStorage: it only remembers who is signed in
+ * and forwards the work to the dummy API in ../api/api.js. Because the API keeps
+ * accounts in memory, a page reload signs the user out — the router guard then
+ * sends them back to /login, which is exactly what a real backend would do with
+ * an expired session.
  */
 import { reactive } from 'vue'
+import { api } from '../api/api.js'
 
-const USERS = 'ptcs_users'
-const SESSION = 'ptcs_session'
+export const auth = reactive({ user: null, token: null })
 
-const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
-const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true } catch { return false } }
+function startSession({ user, token }) {
+  auth.user = user
+  auth.token = token
+}
 
-export const auth = reactive({ user: read(SESSION, null) })
-
-const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('')
-
-async function hash(password, salt) {
-  if (!globalThis.crypto?.subtle) throw new Error('Secure context required: open the app on https:// or localhost.')
-  return hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + password)))
+function clearSession() {
+  auth.user = null
+  auth.token = null
 }
 
 export async function signup(name, email, password) {
-  name = name.trim(); email = email.trim().toLowerCase()
-  if (name.length < 3 || name.length > 20) throw new Error('Username must be 3–20 characters.')
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address.')
-  if (password.length < 8) throw new Error('Password must be at least 8 characters.')
-  const users = read(USERS, [])
-  if (users.some(u => u.email === email)) throw new Error('An account with this email already exists.')
-  const salt = hex(crypto.getRandomValues(new Uint8Array(16)))
-  users.push({ name, email, salt, hash: await hash(password, salt) })
-  if (!write(USERS, users)) throw new Error('Could not save the account (browser storage is unavailable).')
-  startSession({ name, email })
+  startSession(await api.signup(name, email, password))
 }
 
 export async function login(email, password) {
-  email = email.trim().toLowerCase()
-  const u = read(USERS, []).find(x => x.email === email)
-  if (!u || (await hash(password, u.salt)) !== u.hash) throw new Error('Incorrect email or password.')
-  startSession({ name: u.name, email: u.email })
+  startSession(await api.login(email, password))
 }
 
-function startSession(user) { auth.user = user; write(SESSION, user) }
-
-export function logout() {
-  auth.user = null
-  try { localStorage.removeItem(SESSION) } catch {}
+export async function logout() {
+  await api.logout()
+  clearSession()
 }

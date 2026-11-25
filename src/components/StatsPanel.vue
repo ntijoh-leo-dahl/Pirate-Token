@@ -27,7 +27,7 @@
     <ul id="log">
       <li v-if="!S.log.length" class="mute">Nothing yet.</li>
       <li v-for="e in S.log.slice(0, 40)" :key="e.at" :class="{ dupe: e.dupe }">
-        <span :style="{ color: R[e.k].c }">{{ R[e.k].i }} {{ e.item.name }}{{ e.dupe ? ' (already owned)' : '' }}</span>
+        <span :style="{ color: R[e.tier].c }">{{ R[e.tier].i }} {{ e.item.name }}{{ e.dupe ? ' (already owned)' : '' }}</span>
         <span class="mute">#{{ fmt(e.at) }}</span>
       </li>
     </ul>
